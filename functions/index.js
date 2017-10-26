@@ -36,7 +36,29 @@ exports.getJwt = functions.https.onRequest((req, res)=>{
 
 
 exports.readJwt = functions.https.onRequest((req, res)=>{
+	let jwt = req.body.jwt;
+	let passphrase = req.body.passphrase;
 
+	// Verificamos que el JWT y el passphrase coincidan
+	// Eso quiere decir que la firma es válida
+	let isValid = jsrsasign.jws.JWS.verifyJWT(jwt, passphrase, {alg: ['HS256']});
+
+	if(isValid){
+		// Mostrar el contenido del JWT
+		let header = jsrsasign.jws.JWS.readSafeJSONString(
+			jsrsasign.b64utoutf8(
+				jwt.split('.')[0]
+			)
+		);
+		let payload = jsrsasign.jws.JWS.readSafeJSONString(jsrsasign.b64utoutf8(jwt.split('.')[1]));
+
+		let decoded = { header: header, payload: payload };
+
+		res.send(decoded);
+	}else{
+		// Si no, mostramos un error
+		res.send('La firma del JWT no es válida');
+	}
 })
 
 
